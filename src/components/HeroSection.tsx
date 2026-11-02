@@ -1,4 +1,4 @@
-import { HERO, NAVAGRAHAS } from '../content/site';
+import { FEATURES, HERO, NAVAGRAHAS } from '../content/site';
 import { DashaSearch } from './DashaSearch';
 
 export function HeroSection() {
@@ -20,6 +20,9 @@ export function HeroSection() {
         <p className="hero-sub">{HERO.sub}</p>
         <DashaSearch />
         <p className="hero-support">{HERO.support}</p>
+        <ul className="hero-points">
+          {FEATURES.map((feature) => <li key={feature.title}><strong>{feature.title}</strong> {feature.text}</li>)}
+        </ul>
       </div>
 
       <div className="scroll-cue" aria-hidden><span className="label">Scroll</span><i /></div>

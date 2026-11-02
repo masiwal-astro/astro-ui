@@ -60,7 +60,7 @@ main, .footer { position: relative; z-index: 1; }
 
 /* ---------- loader ---------- */
 .loader { position: fixed; inset: 0; z-index: 90; background: var(--bg); display: grid; place-content: center; justify-items: center; gap: 22px; transition: opacity 1.2s var(--ease) .2s, visibility 0s 1.4s; }
-.loader[data-done='true'] { opacity: 0; visibility: hidden; }
+.loader[data-done='true'] { opacity: 0; visibility: hidden; pointer-events: none; }
 .loader-orbit { width: 54px; height: 54px; border-radius: 50%; border: 1px solid var(--line-2); position: relative; animation: spin 2.4s linear infinite; }
 .loader-orbit::before { content: ''; position: absolute; inset: 20px; border-radius: 50%; background: var(--gold); box-shadow: 0 0 24px var(--gold); }
 .loader-orbit i { position: absolute; top: -3px; left: 50%; width: 5px; height: 5px; margin-left: -2.5px; border-radius: 50%; background: var(--ink); }
