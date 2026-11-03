@@ -5,7 +5,7 @@ export function FaqSection() {
   const [open, setOpen] = useState<number | null>(0);
   return (
     <section id="faq" className="section faq" aria-labelledby="faq-title" data-reveal-group>
-      <header className="section-head">
+      <header className="section-head section-head--center">
         <p className="label" data-reveal>Questions</p>
         <h2 id="faq-title" className="display display--md" data-reveal>Frequently asked</h2>
         <p className="body" data-reveal>Everything published about Dasha Astro consultations and chart readings.</p>

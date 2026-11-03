@@ -60,8 +60,8 @@ export function DashaSearch() {
 
   return (
     <div className="search" data-status={status}>
-      <button type="button" className="search-pill" onClick={() => setStatus('open')} aria-haspopup="dialog" aria-expanded={status !== 'idle'}>
-        <span className="search-placeholder">Enter your birth details to discover your Dasha</span>
+      <button type="button" className="search-pill" onClick={() => setStatus('open')} aria-haspopup="dialog" aria-expanded={status !== 'idle'} aria-label="Find my Dasha">
+        <span className="search-placeholder">Find my Dasha</span>
         <span className="search-go" aria-hidden><ArrowRight size={18} strokeWidth={1.4} /></span>
       </button>
 

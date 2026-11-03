@@ -121,8 +121,8 @@ export function SanctuaryShell() {
       <footer className="sanctuary-status">
         <span>Active chart: {profile ? `${profile.name}${profile.example ? ' (example)' : ''} · ${profile.relationship}` : 'None'}</span>
         <span>Responds in: {langLabel}</span>
-        <span>Credits: {account ? account.credits : '—'}</span>
-        <span>Questions: {userCount}</span>
+        {account && <span>Credits: {account.credits}</span>}
+        {account && <span>Questions: {userCount}</span>}
       </footer>
     </div>
   );

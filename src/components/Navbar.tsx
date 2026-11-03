@@ -19,6 +19,7 @@ export function Navbar() {
       </nav>
       <div className="nav-end">
         <Link className="nav-textlink" to="/app">Sanctuary</Link>
+        <Link className="nav-signin" to="/signup">Begin Free</Link>
         <Link className="nav-signin" to="/login">Sign In</Link>
       </div>
       <button className="nav-toggle" aria-expanded={open} aria-controls="nav-links" aria-label={open ? 'Close menu' : 'Open menu'} onClick={() => setOpen((value) => !value)}>

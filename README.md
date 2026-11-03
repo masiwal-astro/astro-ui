@@ -1,6 +1,6 @@
 # Dasha Astro
 
-A cinematic interface for [Dasha Astro](https://www.dashaastro.com): a scroll-linked solar system on the landing page, and a sanctuary for the product’s real surfaces — consultation chat, birth details, D1/D9/D10 charts, Vimshottari timing, Family Vault, birth-time rectification, credit packs, FAQ, and phone sign-in.
+A cinematic interface for [Dasha Astro](https://www.dashaastro.com). One particle field behind the landing page morphs with the scroll: a crisp sun, nine Navagrahas, an open palm, a north-Indian chart, a quiet starfield, then a sun-wheel. The sanctuary covers consultation chat, birth details, D1/D9/D10 charts, Vimshottari timing, Family Vault, birth-time rectification, credit packs, FAQ, and phone sign-in.
 
 The visual system is near-black `#030303`, silver, and champagne gold, with Instrument Serif for headlines and Space Grotesk for UI.
 

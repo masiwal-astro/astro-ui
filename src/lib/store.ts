@@ -2,6 +2,8 @@
 export const motion = {
   /** 0→1 while the hero is pinned: camera push, planets spread, sun begins descent. */
   descent: 0,
+  /** 0–6 scrubbed particle shape. 0 sun, 1 navagraha, 2 palm, 3 kundali, 4 stars, 5 mandala, 6 sun-wheel. */
+  morph: 0,
   /** 0→1 as the final horizon section enters. */
   horizon: 0,
   pointer: { x: 0, y: 0 },

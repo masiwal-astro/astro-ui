@@ -1,32 +1,51 @@
-import { Clock, Layers, Orbit, Users } from 'lucide-react';
-import { useEffect, useRef } from 'react';
-import { INTRO } from '../content/site';
-import { motion } from '../lib/store';
+import { ArrowRight } from 'lucide-react';
+import type { PointerEvent } from 'react';
+import { Link } from 'react-router-dom';
+import { INTRO, STEPS, TOOLS, WHY } from '../content/site';
+import { Glyph } from './Glyph';
 
-const ICONS = { clock: Clock, layers: Layers, orbit: Orbit, users: Users };
+function tilt(event: PointerEvent<HTMLAnchorElement>) {
+  const rect = event.currentTarget.getBoundingClientRect();
+  event.currentTarget.style.setProperty('--mx', `${((event.clientX - rect.left) / rect.width) * 100}%`);
+  event.currentTarget.style.setProperty('--my', `${((event.clientY - rect.top) / rect.height) * 100}%`);
+}
 
 export function DashaIntroduction() {
-  const anchor = useRef<HTMLDivElement>(null);
-  useEffect(() => { motion.anchor = anchor.current; return () => { motion.anchor = null; }; }, []);
   return (
-    <section id="dasha" className="intro" aria-labelledby="intro-title" data-reveal-group>
-      <div className="intro-left">
+    <section id="dasha" className="section dasha-block" aria-labelledby="intro-title" data-reveal-group>
+      <header className="section-head">
         <p className="label" data-reveal>{INTRO.label}</p>
-        <h2 id="intro-title" className="display display--md" data-reveal>{INTRO.headline[0]}<br /><em>{INTRO.headline[1]}</em></h2>
-        {INTRO.body.map((p) => <p key={p.slice(0, 12)} className="body" data-reveal>{p}</p>)}
+        <h2 id="intro-title" className="display display--md" data-reveal>{INTRO.headline[0]} <em>{INTRO.headline[1]}</em></h2>
+        <p className="body" data-reveal>{INTRO.body[0]}</p>
+      </header>
+      <div className="tool-grid">
+        {TOOLS.map((tool) => (
+          <Link key={tool.title} className="tool-card" to={tool.href} onPointerMove={tilt} data-reveal>
+            <Glyph kind={tool.glyph} />
+            <span className="label">{tool.tag}</span>
+            <h3>{tool.title}</h3>
+            <p>{tool.text}</p>
+            <span className="tool-arrow" aria-hidden><ArrowRight size={16} strokeWidth={1.5} /></span>
+          </Link>
+        ))}
       </div>
-      <div className="intro-center" ref={anchor} aria-hidden>
-        <div className="intro-halo"><i /><i /><i /></div>
-        <span className="intro-tag label">Shani</span>
-      </div>
-      <ul className="intro-right">
-        {INTRO.points.map((p) => { const I = ICONS[p.icon]; return (
-          <li key={p.label} data-reveal>
-            <span className="icon-ring"><I size={15} strokeWidth={1.2} /></span>
-            <div><span className="label">{p.label}</span><p>{p.text}</p></div>
+      <ul className="why-grid why-grid--inline">
+        {WHY.map((item) => (
+          <li key={item.title} data-reveal>
+            <h3>{item.title}</h3>
+            <p>{item.text}</p>
           </li>
-        ); })}
+        ))}
       </ul>
+      <ol className="how-row">
+        {STEPS.map((step) => (
+          <li key={step.n} data-reveal>
+            <span className="step-n">{step.n}</span>
+            <h3>{step.title}</h3>
+            <p>{step.text}</p>
+          </li>
+        ))}
+      </ol>
     </section>
   );
 }

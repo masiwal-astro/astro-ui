@@ -2,11 +2,67 @@ import { useLayoutEffect } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import Lenis from 'lenis';
-import { motion } from './store';
+import { clamp, motion } from './store';
 
 gsap.registerPlugin(ScrollTrigger);
 
-/** Wires smooth scrolling + every scroll-linked timeline. Returns nothing; cleans up on unmount. */
+interface Stop { id: string; shape: number }
+
+function sectionTop(id: string) {
+  const el = document.getElementById(id);
+  if (!el) return 0;
+  return el.getBoundingClientRect().top + window.scrollY;
+}
+
+/** Morph over ~70% of a viewport as the next section arrives, then hold. */
+export function computeMorph() {
+  if (motion.reduced) return 0;
+  const mobile = window.innerWidth < 760;
+  const stops: Stop[] = mobile
+    ? [
+        { id: 'hero', shape: 0 },
+        { id: 'dasha', shape: 0 },
+        { id: 'sample', shape: 2 },
+        { id: 'tools', shape: 2 },
+        { id: 'pricing', shape: 2 },
+        { id: 'faq', shape: 2 },
+        { id: 'begin', shape: 5 },
+      ]
+    : [
+        { id: 'hero', shape: 0 },
+        { id: 'dasha', shape: 1 },
+        { id: 'sample', shape: 2 },
+        { id: 'tools', shape: 3 },
+        { id: 'pricing', shape: 4 },
+        { id: 'faq', shape: 4 },
+        { id: 'begin', shape: 5 },
+      ];
+  const vh = window.innerHeight;
+  const span = vh * 0.7;
+  const focus = vh * 0.28;
+  const y = window.scrollY;
+  let morph = stops[0].shape;
+  for (let i = 1; i < stops.length; i += 1) {
+    const arrive = sectionTop(stops[i].id) - focus;
+    const start = arrive - span;
+    if (y < start) break;
+    const t = clamp((y - start) / span);
+    const ease = t * t * (3 - 2 * t);
+    morph = stops[i - 1].shape + (stops[i].shape - stops[i - 1].shape) * ease;
+    if (t < 1) break;
+    morph = stops[i].shape;
+  }
+  if (!mobile && morph >= 4.92) {
+    const begin = document.getElementById('begin');
+    if (begin) {
+      const into = clamp((vh * 0.72 - begin.getBoundingClientRect().top) / span);
+      morph = 5 + into;
+    }
+  }
+  return morph;
+}
+
+/** Wires smooth scrolling, section reveals, and the particle morph scrub. */
 export function useScrollScenes(enabled: boolean) {
   useLayoutEffect(() => {
     if (!enabled) return;
@@ -26,58 +82,37 @@ export function useScrollScenes(enabled: boolean) {
       const el = id === '#top' ? document.body : document.querySelector(id);
       if (!el) return;
       e.preventDefault();
-      if (lenis) lenis.scrollTo(id === '#top' ? 0 : (el as HTMLElement), { offset: 0, duration: 1.6 });
+      if (lenis) lenis.scrollTo(id === '#top' ? 0 : (el as HTMLElement), { offset: 0, duration: 1.1 });
       else (el as HTMLElement).scrollIntoView();
       history.replaceState(null, '', id);
     };
     document.addEventListener('click', onAnchor);
 
     const ctx = gsap.context(() => {
-      // 1 — SHANI DESCENDS: pin hero, drive the 3D composition by progress.
-      const tl = gsap.timeline({
-        scrollTrigger: {
-          trigger: '#hero', start: 'top top', end: '+=90%', pin: true, scrub: reduced ? true : 0.8,
-          onUpdate: (st) => { motion.descent = st.progress; },
-          onLeave: () => { motion.descent = 1; },
-          onEnterBack: () => {},
-        },
-      });
-      tl.to('.hero-copy', { y: -60, opacity: 0, ease: 'power1.in', duration: 0.45 }, 0)
-        .to('.hero-edge', { opacity: 0, duration: 0.3 }, 0)
-        .to('.scroll-cue', { opacity: 0, duration: 0.15 }, 0)
-        .to({}, { duration: 0.55 });
-
-      // 2 — section reveals (staggered)
       gsap.utils.toArray<HTMLElement>('[data-reveal-group]').forEach((group) => {
         const items = group.querySelectorAll('[data-reveal]');
-        gsap.fromTo(items, { y: 28, opacity: 0, filter: 'blur(6px)' }, {
-          y: 0, opacity: 1, filter: 'blur(0px)', duration: reduced ? 0.01 : 1.1, ease: 'power3.out', stagger: 0.09,
-          scrollTrigger: { trigger: group, start: 'top 78%', once: true },
+        gsap.fromTo(items, { y: 10, opacity: 0 }, {
+          y: 0, opacity: 1, duration: reduced ? 0.01 : 0.4, ease: 'power2.out', stagger: 0.04,
+          scrollTrigger: { trigger: group, start: 'top 84%', once: true },
         });
       });
 
-      // 3 — Dasha section: delicate halo rings around the settled Sun
-      gsap.fromTo('.intro-halo', { scale: 0.6, opacity: 0 }, {
-        scale: 1, opacity: 1, ease: 'none',
-        scrollTrigger: { trigger: '#dasha', start: 'top 85%', end: 'center center', scrub: true },
-      });
-
-      // 4 — horizon rise for the final section
       ScrollTrigger.create({
-        trigger: '#begin', start: 'top bottom', end: 'center center', scrub: true,
-        onUpdate: (st) => { motion.horizon = st.progress; },
+        start: 0,
+        end: 'max',
+        onUpdate: () => { motion.morph = computeMorph(); },
       });
+      motion.morph = computeMorph();
 
-      // 5 — navbar state
       ScrollTrigger.create({ start: 80, end: 'max', onToggle: (st) => document.documentElement.classList.toggle('is-scrolled', st.isActive) });
     });
 
-    const onResize = () => ScrollTrigger.refresh();
-    window.addEventListener('load', onResize);
+    const onResize = () => { motion.morph = computeMorph(); ScrollTrigger.refresh(); };
+    window.addEventListener('resize', onResize);
     return () => {
       ctx.revert();
       document.removeEventListener('click', onAnchor);
-      window.removeEventListener('load', onResize);
+      window.removeEventListener('resize', onResize);
       if (lenis) { gsap.ticker.remove(tick); lenis.destroy(); }
     };
   }, [enabled]);

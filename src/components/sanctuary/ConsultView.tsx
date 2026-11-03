@@ -157,7 +157,7 @@ export function ConsultView({
             <button type="button" className="icon-btn" aria-pressed={listening} aria-label={listening ? 'Stop voice input' : 'Start voice input'} onClick={toggleMic}>
               {listening ? <Square size={15} /> : <Mic size={15} strokeWidth={1.6} />}
             </button>
-            <button type="submit" className="search-go" aria-label="Send question" disabled={!profile || !draft.trim() || sending}>
+            <button type="submit" className={draft.trim() ? 'search-go is-active' : 'search-go'} aria-label="Send question" disabled={!profile || !draft.trim() || sending}>
               <Send size={16} strokeWidth={1.6} />
             </button>
           </div>

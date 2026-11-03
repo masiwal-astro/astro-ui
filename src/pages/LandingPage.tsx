@@ -4,9 +4,7 @@ import { HeroSection } from '../components/HeroSection';
 import { DashaIntroduction } from '../components/DashaIntroduction';
 import { SampleSection } from '../components/SampleSection';
 import { AstrologyTools } from '../components/AstrologyTools';
-import { HowItWorks } from '../components/HowItWorks';
 import { PricingSection } from '../components/PricingSection';
-import { BenefitsSection } from '../components/BenefitsSection';
 import { FaqSection } from '../components/FaqSection';
 import { FinalCTA } from '../components/FinalCTA';
 import { Footer } from '../components/Footer';
@@ -82,9 +80,7 @@ export function LandingPage() {
         <DashaIntroduction />
         <SampleSection />
         <AstrologyTools />
-        <HowItWorks />
         <PricingSection />
-        <BenefitsSection />
         <FaqSection />
         <FinalCTA />
       </main>

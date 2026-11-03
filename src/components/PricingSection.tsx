@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { CREDIT_EXPLAINER, CREDIT_PACKS, CREDITS_NOTE } from '../content/site';
+import { CREDIT_PACKS, CREDITS_NOTE } from '../content/site';
 
 export function PricingSection() {
   return (
@@ -25,8 +25,13 @@ export function PricingSection() {
       </div>
       <aside className="explainer" data-reveal>
         <h3>What does 1 credit include?</h3>
-        <p>{CREDIT_EXPLAINER}</p>
+        <ul>
+          <li>Swiss Ephemeris transit generation</li>
+          <li>Parashari dasha calculations, Jaimini chara dasha, and KP sub-lord verification</li>
+          <li>Follow-up clarifications within the thread</li>
+        </ul>
       </aside>
+      <p className="credits-line" data-reveal>Credits never expire. No subscription.</p>
     </section>
   );
 }
