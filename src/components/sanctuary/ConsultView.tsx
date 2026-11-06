@@ -4,11 +4,13 @@ import { LANGUAGES, QUESTION_CHIPS, SANCTUARY_TOPICS, type LanguageCode } from '
 import { dictationAvailable, listen } from '../../lib/speech';
 import { uid } from '../../lib/uid';
 import { ExampleMark, PlaceholderNote } from '../Marks';
+import { Link } from 'react-router-dom';
 import { auth, astrology, PUBLISHED_QUESTION, type BirthProfile, type ChatEntry } from '../../services';
 
 export function ConsultView({
   profile,
   signedIn,
+  credits,
   messages,
   language,
   onLanguage,
@@ -18,6 +20,7 @@ export function ConsultView({
 }: {
   profile: BirthProfile | null;
   signedIn: boolean;
+  credits: number | null;
   messages: ChatEntry[];
   language: LanguageCode;
   onLanguage: (code: LanguageCode) => void;
@@ -31,6 +34,8 @@ export function ConsultView({
   const scroller = useRef<HTMLDivElement>(null);
   const stopRef = useRef<{ stop: () => void } | null>(null);
   const lang = LANGUAGES.find((item) => item.code === language) ?? LANGUAGES[0];
+  const outOfCredits = credits === 0;
+  const questions = messages.filter((message) => message.role === 'user');
 
   useEffect(() => {
     const node = scroller.current;
@@ -46,7 +51,7 @@ export function ConsultView({
   };
 
   const send = (text: string) => {
-    if (!profile || sending) return;
+    if (!profile || sending || outOfCredits) return;
     const question = text.trim();
     if (!question) return;
     setSending(true);
@@ -114,8 +119,23 @@ export function ConsultView({
             )}
           </div>
         )}
+        {questions.length > 0 && (
+          <div className="past-questions">
+            <p className="label">Past questions</p>
+            <ul>
+              {questions.map((question) => (
+                <li key={question.id}>
+                  <button type="button" onClick={() => document.getElementById(`msg-${question.id}`)?.scrollIntoView({ block: 'nearest' })}>
+                    <time dateTime={question.createdAt}>{new Date(question.createdAt).toLocaleString()}</time>
+                    <span>{question.text.split('\n')[0]}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
         {messages.map((message) => message.role === 'user' ? (
-          <article key={message.id} className="bubble bubble--user">
+          <article id={`msg-${message.id}`} key={message.id} className="bubble bubble--user">
             <span className="label">You · {LANGUAGES.find((item) => item.code === message.language)?.label}</span>
             <p>{message.text}</p>
           </article>
@@ -127,7 +147,9 @@ export function ConsultView({
           </article>
         ))}
       </div>
-      {!profile && <PlaceholderNote>Sign in and save a chart, or open the sanctuary preview, before asking.</PlaceholderNote>}
+      {!profile && signedIn && <p className="notice">Add a birth chart in Family Vault, or open the published example, before asking.</p>}
+      {!profile && !signedIn && <PlaceholderNote>Sign in and save a chart, or stay on this preview, before asking.</PlaceholderNote>}
+      {outOfCredits && <p className="notice">0 credits — choose a pack before asking. <Link to="/app?panel=credits">Open credits</Link></p>}
       <form className="composer" onSubmit={(event) => { event.preventDefault(); send(draft); }}>
         <label className="sr-only" htmlFor="chat-input">Your question</label>
         <textarea
@@ -136,7 +158,7 @@ export function ConsultView({
           lang={lang.speech}
           placeholder={lang.placeholder}
           value={draft}
-          disabled={!profile}
+          disabled={!profile || outOfCredits}
           onChange={(event) => onDraft(event.target.value)}
           onKeyDown={(event) => {
             if (event.key === 'Enter' && !event.shiftKey) {
@@ -157,7 +179,7 @@ export function ConsultView({
             <button type="button" className="icon-btn" aria-pressed={listening} aria-label={listening ? 'Stop voice input' : 'Start voice input'} onClick={toggleMic}>
               {listening ? <Square size={15} /> : <Mic size={15} strokeWidth={1.6} />}
             </button>
-            <button type="submit" className={draft.trim() ? 'search-go is-active' : 'search-go'} aria-label="Send question" disabled={!profile || !draft.trim() || sending}>
+            <button type="submit" className={draft.trim() && !outOfCredits ? 'search-go is-active' : 'search-go'} aria-label="Send question" disabled={!profile || !draft.trim() || sending || outOfCredits}>
               <Send size={16} strokeWidth={1.6} />
             </button>
           </div>

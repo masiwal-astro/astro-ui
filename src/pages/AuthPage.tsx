@@ -2,15 +2,17 @@ import { FormEvent, useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { DIAL_CODES, WELCOME_CREDITS } from '../content/site';
 import { BirthForm, emptyDraft, toProfileDraft, validateDraft, type BirthDraft } from '../components/BirthForm';
-import { PlaceholderNote } from '../components/Marks';
+import { pushToast, ToastRegion } from '../components/Feedback';
 import { RectifyView } from '../components/sanctuary/RectifyView';
 import { StaticSky } from '../components/StaticSky';
 import { useAccount } from '../lib/useAccount';
 import { auth } from '../services';
 import { formatDestination, validatePhone } from '../services/mockAuth';
+import { PlaceholderNote } from '../components/Marks';
+import { guestHasQuestion, readGuestThreads } from '../lib/guestThreads';
 import { clearPending, readPending } from '../services/pending';
 
-type Phase = 'phone' | 'code' | 'profile' | 'welcome' | 'btr';
+type Phase = 'phone' | 'code' | 'profile' | 'welcome' | 'returning' | 'btr';
 
 export function AuthPage({ intent }: { intent: 'login' | 'signup' }) {
   const navigate = useNavigate();
@@ -34,6 +36,8 @@ export function AuthPage({ intent }: { intent: 'login' | 'signup' }) {
   }));
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof BirthDraft, string>>>({});
   const [newNumber, setNewNumber] = useState(false);
+  const [keepPreview, setKeepPreview] = useState(false);
+  const previewWaiting = guestHasQuestion();
 
   useEffect(() => {
     document.title = intent === 'login' ? 'Sign in — Dasha Astro' : 'Begin free — Dasha Astro';
@@ -50,11 +54,14 @@ export function AuthPage({ intent }: { intent: 'login' | 'signup' }) {
 
   const enter = () => {
     const question = readPending()?.question ?? '';
+    if (keepPreview && account?.activeProfileId) {
+      Object.values(readGuestThreads()).flat().forEach((entry) => auth.appendMessage(account.activeProfileId!, entry));
+    }
     clearPending();
-    navigate(nextPath(), { state: { question } });
+    navigate(nextPath(), { state: { question: keepPreview ? '' : question } });
   };
 
-  const sendCode = async (event?: FormEvent) => {
+  const sendCode = async (event?: FormEvent, resent = false) => {
     event?.preventDefault();
     setError('');
     const phoneError = validatePhone({ dialCode, nationalNumber });
@@ -66,6 +73,7 @@ export function AuthPage({ intent }: { intent: 'login' | 'signup' }) {
       setPhase('code');
       setResendIn(30);
       setCode('');
+      if (resent) pushToast('Code sent');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'The code could not be requested.');
     } finally {
@@ -80,6 +88,10 @@ export function AuthPage({ intent }: { intent: 'login' | 'signup' }) {
     try {
       const result = await auth.verifyCode({ dialCode, nationalNumber, code });
       if (result.status === 'existing') {
+        if (intent === 'signup') {
+          setPhase('returning');
+          return;
+        }
         const question = readPending()?.question ?? '';
         const hasBirth = !!readPending()?.date;
         navigate(hasBirth ? '/app?panel=vault&prefill=1' : nextPath(), { state: { question } });
@@ -122,7 +134,7 @@ export function AuthPage({ intent }: { intent: 'login' | 'signup' }) {
         <Link to={intent === 'login' ? '/signup' : '/login'}>{intent === 'login' ? 'Begin free' : 'Log in'}</Link>
       </header>
       <main className="auth-card glass" id="auth-card">
-        <p className="label label--gold">{phase === 'phone' || phase === 'code' ? `Step ${phase === 'phone' ? '1' : '2'} of 2 · Phone` : 'Sanctuary'}</p>
+        <p className="label label--gold">{phase === 'phone' ? 'Step 1 of 2 · Phone' : phase === 'code' ? 'Step 2 of 2 · Verify' : 'Sanctuary'}</p>
         {phase === 'phone' && (
           <form onSubmit={sendCode} noValidate>
             <h1>{intent === 'login' ? 'Sign in to Dasha Astro' : 'Begin your free sanctuary'}</h1>
@@ -153,7 +165,7 @@ export function AuthPage({ intent }: { intent: 'login' | 'signup' }) {
               <span>6-digit code</span>
               <input inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={code} onChange={(event) => setCode(event.target.value.replace(/\D/g, '').slice(0, 6))} aria-invalid={!!error} />
             </label>
-            <p className="muted">{resendIn > 0 ? `Resend code in ${resendIn}s` : <button type="button" className="btn btn--text" onClick={() => sendCode()}>Resend code</button>}</p>
+            <p className="muted">{resendIn > 0 ? `Resend code in ${resendIn}s` : <button type="button" className="btn btn--text" onClick={() => sendCode(undefined, true)}>Resend code</button>}</p>
             {error && <p className="form-error" role="alert">{error}</p>}
             <div className="row-actions">
               <button className="btn btn--primary" type="submit" disabled={busy}>{busy ? 'Verifying…' : 'Verify code'}</button>
@@ -164,8 +176,8 @@ export function AuthPage({ intent }: { intent: 'login' | 'signup' }) {
 
         {phase === 'profile' && (
           <form onSubmit={create} noValidate>
-            <h1>{newNumber && intent === 'login' ? 'No sanctuary for this number yet' : 'Your birth chart'}</h1>
-            <p>Registration includes {WELCOME_CREDITS} complimentary credits. They do not expire. This account stays in this browser.</p>
+            <h1>{newNumber && intent === 'login' ? 'Create your sanctuary' : 'Your birth chart'}</h1>
+            <p>{newNumber && intent === 'login' ? `No sanctuary for this number yet. Registration includes ${WELCOME_CREDITS} complimentary credits. They do not expire. This account stays in this browser.` : `Registration includes ${WELCOME_CREDITS} complimentary credits. They do not expire. This account stays in this browser.`}</p>
             <BirthForm idPrefix="signup" draft={draft} errors={fieldErrors} onChange={(next) => { setDraft(next); setFieldErrors({}); }} showRelationship={false} />
             {error && <p className="form-error" role="alert">{error}</p>}
             <button className="btn btn--primary btn--lg" type="submit" disabled={busy}>{busy ? 'Setting up your profile…' : 'Continue'}</button>
@@ -177,6 +189,12 @@ export function AuthPage({ intent }: { intent: 'login' | 'signup' }) {
             <h1>Welcome, {draft.name.trim().split(' ')[0] || 'seeker'}</h1>
             <p>Your planetary dasha timeline is being prepared…</p>
             <p>{WELCOME_CREDITS} complimentary credits are on this placeholder account. Credits never expire. Private to this browser · no ephemeris was called.</p>
+            {previewWaiting && (
+              <label className="check">
+                <input type="checkbox" checked={keepPreview} onChange={(event) => setKeepPreview(event.target.checked)} />
+                Keep your preview question in {draft.name.trim().split(' ')[0] || 'this'}&apos;s thread?
+              </label>
+            )}
             <div className="row-actions">
               <button type="button" className="btn btn--primary" onClick={enter}>Enter sanctuary</button>
               <button type="button" className="btn btn--ghost" onClick={() => setPhase('btr')}>Birth time rectification</button>
@@ -184,10 +202,19 @@ export function AuthPage({ intent }: { intent: 'login' | 'signup' }) {
           </div>
         )}
 
+        {phase === 'returning' && (
+          <div className="stack">
+            <h1>Welcome back</h1>
+            <p>Welcome back — this number already has a sanctuary.</p>
+            <button type="button" className="btn btn--primary" onClick={() => navigate(nextPath())}>Enter sanctuary</button>
+          </div>
+        )}
+
         {phase === 'btr' && (
           <RectifyView profile={active} onDone={enter} />
         )}
       </main>
+      <ToastRegion />
     </div>
   );
 }

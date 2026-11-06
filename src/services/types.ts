@@ -71,6 +71,8 @@ export interface Account {
   profiles: BirthProfile[];
   activeProfileId: string | null;
   threads: Record<string, ChatEntry[]>;
+  /** Preferred answer language for this placeholder account. */
+  language?: LanguageCode;
   createdAt: string;
   /** Always true in this build. A real account service would omit it. */
   placeholder: true;
@@ -87,8 +89,12 @@ export interface AuthService {
   /** Inserts the published fictional sample, if it is not already in the vault. */
   addExampleProfile(): void;
   removeProfile(id: string): void;
+  /** Puts a removed chart and its thread back. Used by the 8-second undo. */
+  restoreProfile(profile: BirthProfile, thread: ChatEntry[], active: boolean): void;
   setActiveProfile(id: string): void;
-  updateProfile(id: string, patch: Partial<Pick<BirthProfile, 'timeUnknown' | 'uncertaintyMinutes' | 'language'>>): void;
+  updateProfile(id: string, patch: Partial<Omit<BirthProfile, 'id' | 'example'>>): void;
+  setPreferredLanguage(language: LanguageCode): void;
+  deleteAccount(): void;
   appendMessage(profileId: string, message: ChatEntry): void;
 }
 

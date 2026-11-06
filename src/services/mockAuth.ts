@@ -65,14 +65,21 @@ function uid(prefix: string) {
   return `${prefix}-${id}`;
 }
 
+const PHONE_RULES: Record<string, { test: (digits: string) => boolean; message: string }> = {
+  '+91': { test: (digits) => /^[6-9]\d{9}$/.test(digits), message: 'Enter a 10-digit Indian mobile number.' },
+  '+1': { test: (digits) => /^\d{10}$/.test(digits), message: 'Enter a 10-digit US or Canada number.' },
+  '+44': { test: (digits) => /^\d{10,11}$/.test(digits), message: 'Enter a UK number (10–11 digits).' },
+  '+971': { test: (digits) => /^\d{9}$/.test(digits), message: 'Enter a 9-digit UAE mobile number.' },
+  '+65': { test: (digits) => /^\d{8}$/.test(digits), message: 'Enter an 8-digit Singapore number.' },
+  '+61': { test: (digits) => /^\d{9}$/.test(digits), message: 'Enter a 9-digit Australian number, without the leading 0.' },
+};
+
 export function validatePhone(input: PhoneInput): string | null {
   const digits = input.nationalNumber.replace(/\D/g, '');
   if (digits !== input.nationalNumber) return 'Use digits only, without spaces.';
-  if (input.dialCode === '+91') {
-    if (!/^[6-9]\d{9}$/.test(digits)) return 'Enter a 10-digit Indian mobile number.';
-    return null;
-  }
-  if (digits.length < 6 || digits.length > 14) return 'Enter the mobile number without the country code.';
+  const rule = PHONE_RULES[input.dialCode];
+  if (rule) return rule.test(digits) ? null : rule.message;
+  if (digits.length < 6 || digits.length > 14) return 'Enter the mobile number for the selected country, without the country code.';
   return null;
 }
 
@@ -181,6 +188,17 @@ const auth: AuthService = {
     commit({ ...account, profiles, threads, activeProfileId });
   },
 
+  restoreProfile(profile, thread, active) {
+    const account = requireAccount();
+    if (account.profiles.some((item) => item.id === profile.id)) return;
+    commit({
+      ...account,
+      profiles: [...account.profiles, profile],
+      threads: { ...account.threads, [profile.id]: thread },
+      activeProfileId: active ? profile.id : account.activeProfileId,
+    });
+  },
+
   setActiveProfile(id) {
     const account = requireAccount();
     if (!account.profiles.some((profile) => profile.id === id)) return;
@@ -193,6 +211,22 @@ const auth: AuthService = {
       ...account,
       profiles: account.profiles.map((profile) => (profile.id === id ? { ...profile, ...patch } : profile)),
     });
+  },
+
+  setPreferredLanguage(language) {
+    const account = requireAccount();
+    commit({ ...account, language });
+  },
+
+  deleteAccount() {
+    const account = requireAccount();
+    const next = { ...accounts };
+    delete next[account.phoneE164];
+    accounts = next;
+    verifiedPhone = null;
+    current = null;
+    persist();
+    emit();
   },
 
   appendMessage(profileId, message: ChatEntry) {

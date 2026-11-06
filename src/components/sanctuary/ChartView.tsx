@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { formatBirthLine } from '../../lib/formatBirth';
 import { ExampleMark, PlaceholderNote } from '../Marks';
 import { astrology, type BirthProfile, type Varga } from '../../services';
 import type { ChartHouse, ChartModel } from '../../services/types';
@@ -111,7 +112,7 @@ function HouseTable({ houses, caption }: { houses: ChartHouse[]; caption: string
   );
 }
 
-export function ChartView({ profile }: { profile: BirthProfile | null }) {
+export function ChartView({ profile, onEdit }: { profile: BirthProfile | null; onEdit?: () => void }) {
   const [varga, setVarga] = useState<Varga>('D1');
   const [style, setStyle] = useState<'north' | 'south'>('north');
   if (!profile) {
@@ -124,8 +125,12 @@ export function ChartView({ profile }: { profile: BirthProfile | null }) {
         <div>
           <p className="label">Natal kundali</p>
           <h2>Charts · {profile.name}</h2>
+          <p className="chart-sub">{formatBirthLine(profile)}</p>
         </div>
-        {model.example && <ExampleMark />}
+        <div className="row-actions">
+          {onEdit && <button type="button" className="btn btn--ghost" onClick={onEdit}>Edit details</button>}
+          {model.example && <ExampleMark />}
+        </div>
       </div>
       <div className="segmented" role="tablist" aria-label="Divisional chart">
         {VARGA.map((item) => (

@@ -13,6 +13,7 @@ export function RectifyView({ profile, onDone }: { profile: BirthProfile | null;
   const [phase, setPhase] = useState<'ready' | 'questions' | 'result'>('ready');
   const [milestones, setMilestones] = useState(EMPTY);
   const [result, setResult] = useState('');
+  const [applyTime, setApplyTime] = useState(profile?.time ?? '');
 
   const prepare = () => setPhase('questions');
 
@@ -71,8 +72,29 @@ export function RectifyView({ profile, onDone }: { profile: BirthProfile | null;
       {phase === 'result' && (
         <div role="status" className="stack">
           <p className="notice">{result}</p>
-          <PlaceholderNote>Birth time on the profile was not replaced.</PlaceholderNote>
-          {onDone && <button type="button" className="btn btn--primary" onClick={onDone}>Enter sanctuary</button>}
+          <PlaceholderNote>No minute was calculated. The time below is only written if you apply it.</PlaceholderNote>
+          {profile && !profile.example && (
+            <label className="field" htmlFor="btr-apply-time">
+              <span>Time to keep</span>
+              <input id="btr-apply-time" type="text" inputMode="numeric" placeholder="HH:MM" value={applyTime} onChange={(event) => setApplyTime(event.target.value)} />
+            </label>
+          )}
+          <div className="row-actions">
+            {profile && !profile.example && (
+              <button
+                type="button"
+                className="btn btn--primary"
+                onClick={() => {
+                  if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(applyTime)) return;
+                  auth.updateProfile(profile.id, { time: applyTime, timeUnknown: false });
+                  setResult(`Wrote ${applyTime} on ${profile.name}'s chart. This was not an ephemeris result.`);
+                }}
+              >
+                Apply this time to {profile.name}&apos;s chart
+              </button>
+            )}
+            {onDone && <button type="button" className="btn btn--ghost" onClick={onDone}>Enter sanctuary</button>}
+          </div>
         </div>
       )}
     </div>
